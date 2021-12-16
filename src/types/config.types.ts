@@ -1,8 +1,7 @@
+type Item = "ancientStoneAxe" | "stoneAxe" | "axe" | "saw" | "chainSaw" | "fishingRod" | "fishingNet" | "fishingBoat" | "miningExcavator";
+
 type DurabilityTypes = {
   [key: string]: number;
-  saw: number;
-  fishingRod: number;
-  ancientStoneAxe: number;
 };
 
 interface ConfigTypes {
@@ -10,4 +9,5 @@ interface ConfigTypes {
     durability: DurabilityTypes;
     energy: number;
   };
+  timer: boolean;
 }

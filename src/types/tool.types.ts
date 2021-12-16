@@ -6,5 +6,4 @@ interface ToolTypes {
   durabilityConsumed: number;
   minDurability: number;
   countdown: number;
-  chargeTime: number;
 }

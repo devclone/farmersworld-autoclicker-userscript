@@ -41,9 +41,15 @@
     const config = {
         minAmount: {
             durability: {
-                saw: 15,
-                fishingRod: 5,
                 ancientStoneAxe: 1,
+                stoneAxe: 3,
+                axe: 5,
+                saw: 15,
+                chainSaw: 45,
+                fishingRod: 5,
+                fishingNet: 20,
+                fishingBoat: 32,
+                miningExcavator: 5,
             },
             energy: 470,
         },
@@ -80,48 +86,8 @@
             .map((word, index) => (index === 0 ? word.toLowerCase() : word))
             .join("");
     }
-    function appendLabel() {
-        const container = document.querySelector(".game-container");
-        const label = document.createElement("div");
-        label.id = "auto-clicker";
-        label.innerText = `Auto-Clicker activated`;
-        label.style.top = "50px";
-        label.style.left = "50%";
-        label.style.transform = "translateX(-50%)";
-        label.style.border = "1px solid transparent";
-        label.style.borderRadius = "5px";
-        label.style.padding = "3px 8px";
-        label.style.backgroundColor = "#D1A79D";
-        label.style.position = "absolute";
-        label.style.color = "#fafafa";
-        label.style.fontSize = "15px";
-        container.appendChild(label);
-    }
 
     const timer = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    function handleChargeTime(string) {
-        const array = string.split(" ");
-        // const newArray = array.map((item) => {
-        //   console.log(item);
-        //   let seconds;
-        //   switch (item[1]) {
-        //     case ("hours", "hour"):
-        //       seconds = +item[0] * 3600;
-        //       console.log(seconds);
-        //       break;
-        //     case "mins":
-        //       seconds = +item[0] * 60;
-        //       console.log(seconds);
-        //       break;
-        //     default:
-        //       seconds = +item[0];
-        //       console.log(seconds);
-        //       break;
-        //   }
-        //   return seconds;
-        // });
-        return +array[0] * 60 * 1000 + 5 * 1000;
-    }
     function handleCountDown(string) {
         // convert string to ms
         const delay = 5;
@@ -133,34 +99,38 @@
         // 1- Convert to seconds:
         let seconds = ms / 1000;
         // 2- Extract hours:
-        const hours = seconds / 3600; // 3,600 seconds in 1 hour
+        const hours = Math.floor(seconds / 3600); // 3,600 seconds in 1 hour
         seconds = seconds % 3600; // seconds remaining after extracting hours
         // 3- Extract minutes:
-        const minutes = seconds / 60; // 60 seconds in 1 minute
+        const minutes = Math.floor(seconds / 60); // 60 seconds in 1 minute
         // 4- Keep only seconds not extracted to minutes:
         seconds = seconds % 60;
-        return `${hours > 0 ? hours + " hours" : ""} ${minutes > 0 ? minutes + " minutes" : ""} ${seconds > 0 ? seconds + " seconds" : ""}`.trim();
+        return `${hours > 0 ? hours + (hours > 1 ? " hours" : " hour") : ""} ${minutes > 0 ? minutes + (minutes > 1 ? " mins" : " min") : ""} ${seconds > 0 ? seconds + (seconds > 1 ? " seconds" : " second") : ""}`.trim();
     }
 
-    function getToolData(domArray) {
+    function getToolObject(index) {
+        const name = document.querySelector(".info-title-name").textContent;
+        const countDown = document.querySelector(".card-container--time").textContent;
+        document.querySelectorAll(".info-description")[2].textContent;
+        const toolObj = {
+            name,
+            id: index,
+            quantity: +document.querySelector(".info-title-level").textContent.split("/")[1],
+            energyConsumed: +document.querySelectorAll(".info-description")[3].textContent,
+            durabilityConsumed: +document.querySelectorAll(".info-description")[4].textContent,
+            minDurability: config.minAmount.durability[sentenceToCamelCase(name)],
+            countdown: handleCountDown(countDown),
+        };
+        return toolObj;
+    }
+
+    function getToolData(arrayOfToolNodes) {
         return __awaiter(this, void 0, void 0, function* () {
             const initialArray = [];
-            for (let index = 0; index < domArray.length; index++) {
-                domArray[index].click();
+            for (let index = 0; index < arrayOfToolNodes.length; index++) {
+                arrayOfToolNodes[index].click();
                 yield timer(2000);
-                const name = document.querySelector(".info-title-name").textContent;
-                const countDown = document.querySelector(".card-container--time").textContent;
-                const chargeTime = document.querySelectorAll(".info-description")[2].textContent;
-                const toolObj = {
-                    name,
-                    id: index,
-                    quantity: +document.querySelector(".info-title-level").textContent.split("/")[1],
-                    energyConsumed: +document.querySelectorAll(".info-description")[3].textContent,
-                    durabilityConsumed: +document.querySelectorAll(".info-description")[4].textContent,
-                    minDurability: config.minAmount.durability[sentenceToCamelCase(name)],
-                    countdown: handleCountDown(countDown),
-                    chargeTime: handleChargeTime(chargeTime),
-                };
+                const toolObj = getToolObject(index);
                 initialArray.push(toolObj);
             }
             return initialArray;
@@ -267,7 +237,7 @@
         }
         return response;
     }
-    function checkResources(currentTool) {
+    function checkLimitsHandler(currentTool) {
         return __awaiter(this, void 0, void 0, function* () {
             // const currentDurability = +document
             //   .querySelector(".card-number")
@@ -305,50 +275,100 @@
         });
     }
 
-    function handleClickOnMineButton(currentTool, dataArray) {
+    function labelInit() {
+        const container = document.querySelector(".game-container");
+        const divWrapper = document.createElement("div");
+        divWrapper.classList.add("label");
+        divWrapper.id = "auto-clicker";
+        divWrapper.style.top = "50px";
+        divWrapper.style.left = "50%";
+        divWrapper.style.transform = "translateX(-50%)";
+        divWrapper.style.border = "1px solid transparent";
+        divWrapper.style.borderRadius = "5px";
+        divWrapper.style.padding = "3px 8px";
+        divWrapper.style.backgroundColor = "#D1A79D";
+        divWrapper.style.position = "absolute";
+        divWrapper.style.color = "#fafafa";
+        divWrapper.style.fontSize = "15px";
+        divWrapper.style.display = "flex";
+        divWrapper.style.flexDirection = "column";
+        const divTitle = document.createElement("div");
+        divTitle.classList.add("label__title");
+        divTitle.innerText = `Auto-Clicker activated`;
+        const divContent = document.createElement("div");
+        divContent.classList.add("label__content");
+        container.appendChild(divWrapper);
+        divWrapper.appendChild(divTitle);
+        divWrapper.appendChild(divContent);
+    }
+    // export function labelContentUpdate(string: string, ms: number) {
+    //   const content = document.querySelector(".label__content");
+    //   content.innerHTML = string + labelTimer(ms);
+    // }
+    function labelTimer(string, ms) {
+        const end = Date.now() + ms;
+        const interval = setInterval(() => {
+            const content = document.querySelector(".label__content");
+            let start = Date.now();
+            let diff = end - start;
+            let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            content.innerHTML =
+                string +
+                    " " +
+                    `in ${hours > 0 ? hours + (hours > 1 ? " hours" : " hour") : ""} ${minutes > 0 ? minutes + (minutes > 1 ? " mins" : " min") : ""} ${seconds > 0 ? seconds + (seconds > 1 ? " seconds" : " second") : ""}`.trim();
+            if (diff < 0) {
+                clearInterval(interval);
+                content.innerHTML = string + " EXPIRED";
+            }
+        }, 1000);
+    }
+
+    function handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData) {
         return __awaiter(this, void 0, void 0, function* () {
             // 1) Check if 'Mine' button is available
             const mineButton = document.querySelector(".button-section");
-            const arrayOfToolsDOM = document.querySelector("section.vertical-carousel-container").children;
             if (mineButton.textContent !== "Mine") {
                 const countDownString = document.querySelector(".card-container--time").textContent;
                 const countDown = handleCountDown(countDownString);
-                const toolWithLowestCd = findItemWithLowestCd(dataArray);
-                logger(`Current tool [${currentTool.name}:id${currentTool.id}]: Tool with lowest CD [${currentTool.name}:id${currentTool.id}]`);
-                console.log(dataArray);
-                if (toolWithLowestCd.id === currentTool.id) {
-                    logger(`[${currentTool.name}:id${currentTool.id}] Mine button not active yet, the click action will be performed in ${msToTime(countDown)}`);
+                const visibleToolName = document.querySelector(".info-title-name").textContent;
+                // console.log(toolWithLowestCd);
+                console.log(toolWithLowestCd.name, visibleToolName);
+                if (toolWithLowestCd.name === visibleToolName) {
+                    logger(`[${toolWithLowestCd.name}: id ${toolWithLowestCd.id}] Mine button not active yet, the click action will be performed in ${msToTime(countDown)}`);
+                    labelTimer(`Next click: ${toolWithLowestCd.name} [id ${toolWithLowestCd.id}]`, countDown);
                     setTimeout(() => {
-                        handleClickOnMineButton(currentTool, dataArray);
+                        logger("click equal id");
+                        handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData);
                     }, countDown);
                 }
                 else {
-                    logger(`[debugger] on click fail]`);
-                    console.log(dataArray);
-                    findLowestCdAndClick(arrayOfToolsDOM, dataArray);
+                    logger("clickHandler fired");
+                    clickHandler(arrayOfToolNodes, toolData);
                 }
                 return;
             }
-            //  2) Check resources
-            checkResources(currentTool);
+            // 2) Check resources
+            yield checkLimitsHandler(toolWithLowestCd);
+            // 3) Click action
             logger("---===Click Action Performing===---");
             mineButton.click();
             yield handleModalClose();
-            logger(`Mine button click on ${currentTool.name}[id:${currentTool.id}] is SUCCESSFUL`);
+            logger(`Mine button click on ${toolWithLowestCd.name}[id:${toolWithLowestCd.id}] is SUCCESSFUL`);
             setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                const updatedData = yield getToolData(arrayOfToolsDOM);
-                findLowestCdAndClick(arrayOfToolsDOM, updatedData);
+                const newToolData = yield getToolData(arrayOfToolNodes);
+                clickHandler(arrayOfToolNodes, newToolData);
             }), 10000);
         });
     }
-    function findLowestCdAndClick(domArray, dataArray) {
-        const toolWithLowestCD = findItemWithLowestCd(dataArray);
-        console.log(toolWithLowestCD);
-        domArray[toolWithLowestCD.id].click();
-        setTimeout(() => handleClickOnMineButton(toolWithLowestCD, dataArray), 3000);
+    function clickHandler(arrayOfToolNodes, toolData) {
+        const toolWithLowestCd = findItemWithLowestCd(toolData);
+        arrayOfToolNodes[toolWithLowestCd.id].click();
+        console.log(arrayOfToolNodes[toolWithLowestCd.id]);
+        setTimeout(() => handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData), 3000);
     }
 
-    // CONFIG
     function activateAutoClicker() {
         return __awaiter(this, void 0, void 0, function* () {
             const isGameLoaded = yield waitForElement(".button-section");
@@ -356,14 +376,13 @@
                 return logger("Error with login occurred");
             }
             logger("Auto-Click script is running...");
-            appendLabel();
-            // If login succeed, then get info about all tools
-            const arrayOfToolsDOM = document.querySelector("section.vertical-carousel-container").children;
-            const initialToolsData = yield getToolData(arrayOfToolsDOM);
+            labelInit();
+            const arrayOfToolNodes = document.querySelector("section.vertical-carousel-container").children;
+            const initialToolsData = yield getToolData(arrayOfToolNodes);
             if (initialToolsData) {
                 logger("Initial Tool data is complete");
                 console.log(initialToolsData);
-                findLowestCdAndClick(arrayOfToolsDOM, initialToolsData);
+                clickHandler(arrayOfToolNodes, initialToolsData);
             }
         });
     }

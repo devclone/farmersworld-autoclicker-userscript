@@ -1,5 +1,5 @@
 import { logger, waitForElement } from "../utility/utility";
-import { config } from "./../config";
+import { config } from "../config";
 
 // async function handleToolRepair(currentDurability) {
 //   let response;
@@ -93,7 +93,7 @@ function checkIfOneMoreClickIsAvailable(currentTool: ToolTypes, currentValue: nu
   return response;
 }
 
-export default async function checkResources(currentTool: ToolTypes) {
+export default async function checkLimitsHandler(currentTool: ToolTypes) {
   // const currentDurability = +document
   //   .querySelector(".card-number")
   //   .textContent.split("/")[0];
