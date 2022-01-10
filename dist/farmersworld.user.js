@@ -1,7 +1,7 @@
 
 // ==UserScript==
 // @name			farmersworld
-// @version			1.0.0
+// @version			1.1.1
 // @author			splash07
 // @grant			none
 // @match			https://play.farmersworld.io/
@@ -41,18 +41,19 @@
     const config = {
         minAmount: {
             durability: {
-                ancientStoneAxe: 1,
+                ancientStoneAxe: 24,
                 stoneAxe: 3,
                 axe: 5,
                 saw: 15,
-                chainSaw: 45,
-                fishingRod: 5,
+                chainSaw: 270,
+                fishingRod: 150,
                 fishingNet: 20,
                 fishingBoat: 32,
                 miningExcavator: 5,
             },
             energy: 470,
         },
+        timer: true,
     };
 
     function waitForElement(selector) {
@@ -111,10 +112,10 @@
     function getToolObject(index) {
         const name = document.querySelector(".info-title-name").textContent;
         const countDown = document.querySelector(".card-container--time").textContent;
-        document.querySelectorAll(".info-description")[2].textContent;
         const toolObj = {
             name,
             id: index,
+            type: "mining",
             quantity: +document.querySelector(".info-title-level").textContent.split("/")[1],
             energyConsumed: +document.querySelectorAll(".info-description")[3].textContent,
             durabilityConsumed: +document.querySelectorAll(".info-description")[4].textContent,
@@ -129,7 +130,7 @@
             const initialArray = [];
             for (let index = 0; index < arrayOfToolNodes.length; index++) {
                 arrayOfToolNodes[index].click();
-                yield timer(2000);
+                yield timer(4000);
                 const toolObj = getToolObject(index);
                 initialArray.push(toolObj);
             }
@@ -144,82 +145,83 @@
         return toolWithLowestCD;
     }
 
-    // async function handleToolRepair(currentDurability) {
-    //   let response;
-    //   if (currentDurability <= minAmount.durability) {
-    //     logger(
-    //       `Current durability (${currentDurability}) less than or equal to specified limit (${minAmount.durability}), repairing...`
-    //     );
-    //     const repairButton = document.querySelectorAll(
-    //       ".plain-button.semi-short"
-    //     )[1];
-    //     if (repairButton.className.includes("disabled")) {
-    //       logger(
-    //         `You dont have enough gold to perform repair action\/nTool repair action is FAILED`
-    //       );
-    //       response = false;
-    //       return response;
-    //     }
-    //     logger(`---===Tool Repair Action Performing===---`);
-    //     setTimeout(() => {
-    //       repairButton.click();
-    //     }, 5000);
-    //     logger("Tool has been repaired");
-    //   }
-    //   response = true;
-    //   return response;
-    // }
-    function handleEnergyRestore(currentEnergy, maxCapEnergy) {
+    function handleToolRepair() {
         return __awaiter(this, void 0, void 0, function* () {
+            const durabilityContent = document.querySelector(".content");
+            const maxDurability = durabilityContent.textContent.split("/ ")[1];
+            const repairButton = document.querySelectorAll(".plain-button.semi-short")[1];
             let response;
-            if (currentEnergy <= config.minAmount.energy) {
-                logger(`Current energy (${currentEnergy}) less than or equal to specified limit (${config.minAmount.energy})`);
-                const currentFood = +document.querySelectorAll(".resource-number")[2].textContent;
-                if (currentFood < 1) {
-                    logger(`You need at least 1 whole piece of food to perform energy restoration action\/n Energy restore action is FAILED`);
-                    response = false;
-                    return response;
-                }
-                logger(`---===Energy Restore Action Performing===---`);
-                const addEnergyButton = document.querySelector(".resource-energy--plus");
-                addEnergyButton.click();
-                const energyModal = yield waitForElement(".exchange-modal");
-                if (energyModal) {
-                    const plusEnergyButton = document.querySelector('img[alt="Plus Icon"]');
-                    const pointsPerFood = 5;
-                    const foodRequired = Math.floor((maxCapEnergy - currentEnergy) / pointsPerFood);
-                    if (currentFood >= foodRequired) {
-                        // DO FULL ENERGY RESTORE
-                        for (let i = 0; i < foodRequired; i++) {
-                            plusEnergyButton.click();
-                        }
-                        logger(`Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`);
-                    }
-                    else {
-                        // DO ENERGY RESTORE WITH AVAILABLE AMOUNT OF FOOD
-                        for (let i = 0; i < Math.floor(currentFood); i++) {
-                            plusEnergyButton.click();
-                        }
-                        logger(`Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`);
-                    }
-                    const exchangeButton = yield waitForElement(".plain-button.long:not(.disabled)");
-                    exchangeButton.click();
-                }
-                const exchangeSuccess = yield waitForElement(".flash-container");
-                if (exchangeSuccess) {
-                    logger("Energy restore action is SUCCESSFUL");
-                }
+            // if repair button is disabled, then return false
+            if (repairButton.className.includes("disabled")) {
+                logger(`You dont have enough gold to perform repair action. Tool repair action is FAILED`);
+                response = false;
+                return response;
             }
-            response = true;
-            return response;
+            logger(`---===Tool Repair Action Performing===---`);
+            repairButton.click();
+            yield timer(5000);
+            if (durabilityContent.textContent === `${maxDurability}/ ${maxDurability}`) {
+                logger("Tool repair action is SUCCESSFUL");
+                response = true;
+                return response;
+            }
+            else {
+                handleToolRepair();
+            }
+        });
+    }
+    function handleEnergyRestore(currentEnergy) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const energyContent = document.querySelectorAll(".resource-number")[3];
+            const maxCapEnergy = energyContent.textContent.split(" /")[1];
+            const currentFood = +document.querySelectorAll(".resource-number")[2].textContent;
+            let response;
+            if (currentFood < 1) {
+                logger(`You need at least 1 whole piece of food to perform energy restoration action\/n Energy restore action is FAILED`);
+                response = false;
+                return response;
+            }
+            logger(`---===Energy Restore Action Performing===---`);
+            const addEnergyButton = document.querySelector(".resource-energy--plus");
+            addEnergyButton.click();
+            const energyModal = yield waitForElement(".exchange-modal");
+            if (energyModal) {
+                const plusEnergyButton = document.querySelector('img[alt="Plus Icon"]');
+                const pointsPerFood = 5;
+                const foodRequired = Math.floor((Number(maxCapEnergy) - currentEnergy) / pointsPerFood);
+                if (currentFood >= foodRequired) {
+                    // DO FULL ENERGY RESTORE
+                    for (let i = 0; i < foodRequired; i++) {
+                        plusEnergyButton.click();
+                    }
+                    logger(`Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`);
+                }
+                else {
+                    // DO ENERGY RESTORE WITH AVAILABLE AMOUNT OF FOOD
+                    for (let i = 0; i < Math.floor(currentFood); i++) {
+                        plusEnergyButton.click();
+                    }
+                    logger(`Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`);
+                }
+                const exchangeButton = yield waitForElement(".plain-button.long:not(.disabled)");
+                exchangeButton.click();
+            }
+            yield timer(5000);
+            if (energyContent.textContent === `${maxCapEnergy} /${maxCapEnergy}`) {
+                logger("Energy restore action is SUCCESSFUL");
+                response = true;
+                return response;
+            }
+            else {
+                handleEnergyRestore(currentEnergy);
+            }
         });
     }
     function checkIfOneMoreClickIsAvailable(currentTool, currentValue, action) {
         let response;
-        const durabilityPerClick = +document.querySelectorAll(".info-description")[4];
         switch (action) {
             case "durability":
-                if (currentValue > durabilityPerClick) {
+                if (currentValue > currentTool.durabilityConsumed) {
                     response = true;
                 }
                 else {
@@ -239,39 +241,39 @@
     }
     function checkLimitsHandler(currentTool) {
         return __awaiter(this, void 0, void 0, function* () {
-            // const currentDurability = +document
-            //   .querySelector(".card-number")
-            //   .textContent.split("/")[0];
+            const clicker = document.getElementById("#auto-clicker");
+            let response;
+            logger("---===Limit check Action Performing===---");
             const currentEnergy = +document.querySelectorAll(".resource-number")[3].textContent.split("/")[0];
-            const maxCapEnergy = +document.querySelectorAll(".resource-number")[3].textContent.split("/")[1];
-            if (
-            // currentDurability <= minAmount.durability ||
-            currentEnergy <= config.minAmount.energy) {
-                const clicker = document.getElementById("#auto-clicker");
-                const energyRestoreResult = yield handleEnergyRestore(currentEnergy, maxCapEnergy);
+            if (currentEnergy <= config.minAmount.energy) {
+                logger(`Current energy (${currentEnergy}) less than or equal to specified limit (${config.minAmount.energy})`);
+                const energyRestoreResult = yield handleEnergyRestore(currentEnergy);
+                logger("await energy restore?");
                 if (!energyRestoreResult) {
                     const checker = checkIfOneMoreClickIsAvailable(currentTool, currentEnergy, "energy");
                     if (!checker) {
                         clicker.textContent = "Auto-Click deactivated(fail occurred)";
                         logger("You dont have enough energy to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
-                        return;
+                        response = false;
                     }
                 }
-                // const toolRepairResult = await handleToolRepair(currentDurability);
-                // if (!toolRepairResult) {
-                //   const checker = checkIfOneMoreClickIsAvalible(
-                //     currentDurability,
-                //     "durability"
-                //   );
-                //   if (!checker) {
-                //     clicker.textContent = "Auto-Click deactivated(fail occurred)";
-                //     logger(
-                //       "You dont have enough durability to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down..."
-                //     );
-                //     return;
-                //   }
-                // }
             }
+            const currentDurability = +document.querySelector(".card-number").textContent.split("/")[0];
+            if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentTool.name)]) {
+                logger(`Current durability (${currentDurability}) less than or equal to specified limit (${config.minAmount.durability[sentenceToCamelCase(currentTool.name)]}), repairing...`);
+                const toolRepairResult = yield handleToolRepair();
+                if (!toolRepairResult) {
+                    const checker = checkIfOneMoreClickIsAvailable(currentTool, currentDurability, "durability");
+                    if (!checker) {
+                        clicker.textContent = "Auto-Click deactivated(fail occurred)";
+                        logger("You dont have enough durability to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
+                        response = false;
+                    }
+                }
+            }
+            logger("Limit check action SUCCESSFUL");
+            response = true;
+            return response;
         });
     }
 
@@ -301,10 +303,6 @@
         divWrapper.appendChild(divTitle);
         divWrapper.appendChild(divContent);
     }
-    // export function labelContentUpdate(string: string, ms: number) {
-    //   const content = document.querySelector(".label__content");
-    //   content.innerHTML = string + labelTimer(ms);
-    // }
     function labelTimer(string, ms) {
         const end = Date.now() + ms;
         const interval = setInterval(() => {
@@ -333,39 +331,39 @@
                 const countDownString = document.querySelector(".card-container--time").textContent;
                 const countDown = handleCountDown(countDownString);
                 const visibleToolName = document.querySelector(".info-title-name").textContent;
-                // console.log(toolWithLowestCd);
+                console.log(toolData);
                 console.log(toolWithLowestCd.name, visibleToolName);
-                if (toolWithLowestCd.name === visibleToolName) {
+                if (toolWithLowestCd.name !== visibleToolName) {
+                    logger("Names doesn't matches, searching for tool with lowest cd again...");
+                    return clickHandler(arrayOfToolNodes, toolData);
+                }
+                else {
+                    logger(`CD diff ${msToTime(toolData[1].countdown - toolData[0].countdown)}`);
                     logger(`[${toolWithLowestCd.name}: id ${toolWithLowestCd.id}] Mine button not active yet, the click action will be performed in ${msToTime(countDown)}`);
                     labelTimer(`Next click: ${toolWithLowestCd.name} [id ${toolWithLowestCd.id}]`, countDown);
-                    setTimeout(() => {
-                        logger("click equal id");
+                    return setTimeout(() => {
                         handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData);
                     }, countDown);
                 }
-                else {
-                    logger("clickHandler fired");
-                    clickHandler(arrayOfToolNodes, toolData);
-                }
-                return;
             }
             // 2) Check resources
-            yield checkLimitsHandler(toolWithLowestCd);
+            const checkedResult = yield checkLimitsHandler(toolWithLowestCd);
             // 3) Click action
-            logger("---===Click Action Performing===---");
-            mineButton.click();
-            yield handleModalClose();
-            logger(`Mine button click on ${toolWithLowestCd.name}[id:${toolWithLowestCd.id}] is SUCCESSFUL`);
-            setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                const newToolData = yield getToolData(arrayOfToolNodes);
-                clickHandler(arrayOfToolNodes, newToolData);
-            }), 10000);
+            if (checkedResult) {
+                logger("---===Click Action Performing===---");
+                mineButton.click();
+                yield handleModalClose();
+                logger(`Mine button click on ${toolWithLowestCd.name}[id:${toolWithLowestCd.id}] is SUCCESSFUL`);
+                setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                    const newToolData = yield getToolData(arrayOfToolNodes);
+                    clickHandler(arrayOfToolNodes, newToolData);
+                }), 10000);
+            }
         });
     }
     function clickHandler(arrayOfToolNodes, toolData) {
         const toolWithLowestCd = findItemWithLowestCd(toolData);
         arrayOfToolNodes[toolWithLowestCd.id].click();
-        console.log(arrayOfToolNodes[toolWithLowestCd.id]);
         setTimeout(() => handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData), 3000);
     }
 
@@ -381,7 +379,6 @@
             const initialToolsData = yield getToolData(arrayOfToolNodes);
             if (initialToolsData) {
                 logger("Initial Tool data is complete");
-                console.log(initialToolsData);
                 clickHandler(arrayOfToolNodes, initialToolsData);
             }
         });

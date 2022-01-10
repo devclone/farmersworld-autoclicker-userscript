@@ -1,5 +1,13 @@
-interface ToolTypes {
+enum Type {
+  "mining",
+  "cow",
+  "plant",
+  "chicken",
+}
+
+interface ToolType {
   name: string;
+  type: string;
   id: number;
   quantity: number;
   energyConsumed: number;

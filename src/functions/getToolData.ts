@@ -5,7 +5,7 @@ export default async function getToolData(arrayOfToolNodes: HTMLCollectionOf<HTM
   const initialArray = [];
   for (let index = 0; index < arrayOfToolNodes.length; index++) {
     arrayOfToolNodes[index].click();
-    await timer(2000);
+    await timer(4000);
     const toolObj = getToolObject(index);
     initialArray.push(toolObj);
   }

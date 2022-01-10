@@ -41,7 +41,6 @@ async function handleEnergyRestore(currentEnergy: number) {
   const addEnergyButton: HTMLElement = document.querySelector(".resource-energy--plus");
   addEnergyButton.click();
   const energyModal = await waitForElement(".exchange-modal");
-  let result;
   if (energyModal) {
     const plusEnergyButton: HTMLElement = document.querySelector('img[alt="Plus Icon"]');
     const pointsPerFood = 5;
@@ -51,20 +50,19 @@ async function handleEnergyRestore(currentEnergy: number) {
       for (let i = 0; i < foodRequired; i++) {
         plusEnergyButton.click();
       }
-      result = `Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`;
+      logger(`Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`);
     } else {
       // DO ENERGY RESTORE WITH AVAILABLE AMOUNT OF FOOD
       for (let i = 0; i < Math.floor(currentFood); i++) {
         plusEnergyButton.click();
       }
-      result = `Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`;
+      logger(`Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`);
     }
     const exchangeButton = await waitForElement(".plain-button.long:not(.disabled)");
     exchangeButton.click();
   }
   await timer(5000);
   if (energyContent.textContent === `${maxCapEnergy} /${maxCapEnergy}`) {
-    logger(result);
     logger("Energy restore action is SUCCESSFUL");
     response = true;
     return response;
@@ -99,10 +97,10 @@ function checkIfOneMoreClickIsAvailable(currentTool: ToolType, currentValue: num
 export default async function checkLimitsHandler(currentTool: ToolType) {
   const clicker = document.getElementById("#auto-clicker");
   let response;
+  logger("---===Limit check Action Performing===---");
 
   const currentEnergy = +document.querySelectorAll(".resource-number")[3].textContent.split("/")[0];
   if (currentEnergy <= config.minAmount.energy) {
-    logger("---===Limit check Action Performing===---");
     logger(`Current energy (${currentEnergy}) less than or equal to specified limit (${config.minAmount.energy})`);
     const energyRestoreResult = await handleEnergyRestore(currentEnergy);
     logger("await energy restore?");
@@ -118,7 +116,6 @@ export default async function checkLimitsHandler(currentTool: ToolType) {
 
   const currentDurability = +document.querySelector(".card-number").textContent.split("/")[0];
   if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentTool.name)]) {
-    logger("---===Limit check Action Performing===---");
     logger(
       `Current durability (${currentDurability}) less than or equal to specified limit (${
         config.minAmount.durability[sentenceToCamelCase(currentTool.name)]
@@ -134,7 +131,7 @@ export default async function checkLimitsHandler(currentTool: ToolType) {
       }
     }
   }
-
+  logger("Limit check action SUCCESSFUL");
   response = true;
   return response;
 }

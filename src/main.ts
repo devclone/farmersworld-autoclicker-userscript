@@ -16,7 +16,6 @@ async function activateAutoClicker() {
   const initialToolsData = await getToolData(arrayOfToolNodes as HTMLCollectionOf<HTMLElement>);
   if (initialToolsData) {
     logger("Initial Tool data is complete");
-    console.log(initialToolsData);
     clickHandler(arrayOfToolNodes as HTMLCollectionOf<HTMLElement>, initialToolsData);
   }
 }
