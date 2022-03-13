@@ -44,49 +44,17 @@
                 ancientStoneAxe: 24,
                 stoneAxe: 3,
                 axe: 5,
-                saw: 15,
-                chainSaw: 270,
-                fishingRod: 150,
+                saw: 45,
+                chainsaw: 270,
+                fishingRod: 50,
                 fishingNet: 20,
                 fishingBoat: 32,
                 miningExcavator: 5,
             },
-            energy: 470,
+            energy: 120,
         },
         timer: true,
     };
-
-    function waitForElement(selector) {
-        return __awaiter(this, void 0, void 0, function* () {
-            while (document.querySelector(selector) === null) {
-                yield new Promise((resolve) => requestAnimationFrame(resolve));
-            }
-            yield new Promise((resolve) => setTimeout(resolve, 1000));
-            return document.querySelector(selector);
-        });
-    }
-    function handleModalClose() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const modal = yield waitForElement(".modal");
-            if (modal) {
-                const wrapper = document.querySelector(".wapper");
-                setTimeout(() => {
-                    wrapper.click();
-                    logger("Modal is closed");
-                }, 10000);
-            }
-        });
-    }
-    function logger(string) {
-        const date = new Date().toTimeString().split(" ")[0];
-        return console.log(`[${date}] ${string}`);
-    }
-    function sentenceToCamelCase(string) {
-        return string
-            .split(" ")
-            .map((word, index) => (index === 0 ? word.toLowerCase() : word))
-            .join("");
-    }
 
     const timer = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     function handleCountDown(string) {
@@ -109,40 +77,37 @@
         return `${hours > 0 ? hours + (hours > 1 ? " hours" : " hour") : ""} ${minutes > 0 ? minutes + (minutes > 1 ? " mins" : " min") : ""} ${seconds > 0 ? seconds + (seconds > 1 ? " seconds" : " second") : ""}`.trim();
     }
 
-    function getToolObject(index) {
-        const name = document.querySelector(".info-title-name").textContent;
-        const countDown = document.querySelector(".card-container--time").textContent;
-        const toolObj = {
-            name,
-            id: index,
-            type: "mining",
-            quantity: +document.querySelector(".info-title-level").textContent.split("/")[1],
-            energyConsumed: +document.querySelectorAll(".info-description")[3].textContent,
-            durabilityConsumed: +document.querySelectorAll(".info-description")[4].textContent,
-            minDurability: config.minAmount.durability[sentenceToCamelCase(name)],
-            countdown: handleCountDown(countDown),
-        };
-        return toolObj;
-    }
-
-    function getToolData(arrayOfToolNodes) {
+    function waitForElement(selector) {
         return __awaiter(this, void 0, void 0, function* () {
-            const initialArray = [];
-            for (let index = 0; index < arrayOfToolNodes.length; index++) {
-                arrayOfToolNodes[index].click();
-                yield timer(4000);
-                const toolObj = getToolObject(index);
-                initialArray.push(toolObj);
+            while (document.querySelector(selector) === null) {
+                yield new Promise((resolve) => requestAnimationFrame(resolve));
             }
-            return initialArray;
+            yield new Promise((resolve) => setTimeout(resolve, 1000));
+            return document.querySelector(selector);
         });
     }
-
-    function findItemWithLowestCd(arrayOfTools) {
-        const toolWithLowestCD = arrayOfTools.reduce((prev, cur) => {
-            return prev.countdown < cur.countdown ? prev : cur;
+    function handleModalClose() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const modal = yield waitForElement(".modal");
+            if (modal) {
+                logger("Modal appeared");
+                const wrapper = document.querySelector(".wapper");
+                wrapper.click();
+                yield timer(10000);
+                logger("Modal is closed");
+                return true;
+            }
         });
-        return toolWithLowestCD;
+    }
+    function logger(string) {
+        const date = new Date().toTimeString().split(" ")[0];
+        return console.log(`[${date}] ${string}`);
+    }
+    function sentenceToCamelCase(string) {
+        return string
+            .split(" ")
+            .map((word, index) => (index === 0 ? word.toLowerCase() : word))
+            .join("");
     }
 
     function handleToolRepair() {
@@ -185,6 +150,7 @@
             const addEnergyButton = document.querySelector(".resource-energy--plus");
             addEnergyButton.click();
             const energyModal = yield waitForElement(".exchange-modal");
+            let result;
             if (energyModal) {
                 const plusEnergyButton = document.querySelector('img[alt="Plus Icon"]');
                 const pointsPerFood = 5;
@@ -194,20 +160,21 @@
                     for (let i = 0; i < foodRequired; i++) {
                         plusEnergyButton.click();
                     }
-                    logger(`Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`);
+                    result = `Total energy restored: ${pointsPerFood * foodRequired}, food spent: ${foodRequired}`;
                 }
                 else {
                     // DO ENERGY RESTORE WITH AVAILABLE AMOUNT OF FOOD
                     for (let i = 0; i < Math.floor(currentFood); i++) {
                         plusEnergyButton.click();
                     }
-                    logger(`Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`);
+                    result = `Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`;
                 }
                 const exchangeButton = yield waitForElement(".plain-button.long:not(.disabled)");
                 exchangeButton.click();
             }
             yield timer(5000);
             if (energyContent.textContent === `${maxCapEnergy} /${maxCapEnergy}`) {
+                logger(result);
                 logger("Energy restore action is SUCCESSFUL");
                 response = true;
                 return response;
@@ -217,11 +184,11 @@
             }
         });
     }
-    function checkIfOneMoreClickIsAvailable(currentTool, currentValue, action) {
+    function checkIfOneMoreClickIsAvailable(currentItem, currentValue, action) {
         let response;
         switch (action) {
             case "durability":
-                if (currentValue > currentTool.durabilityConsumed) {
+                if (currentValue > currentItem.durabilityConsumed) {
                     response = true;
                 }
                 else {
@@ -229,7 +196,7 @@
                 }
                 break;
             case "energy":
-                if (currentValue > currentTool.energyConsumed) {
+                if (currentValue > currentItem.energyConsumed) {
                     response = true;
                 }
                 else {
@@ -239,18 +206,21 @@
         }
         return response;
     }
-    function checkLimitsHandler(currentTool) {
+    function checkLimitsHandler(currentItem) {
         return __awaiter(this, void 0, void 0, function* () {
             const clicker = document.getElementById("#auto-clicker");
             let response;
-            logger("---===Limit check Action Performing===---");
+            if (currentItem.type !== "tool") {
+                response = true;
+                return response;
+            }
             const currentEnergy = +document.querySelectorAll(".resource-number")[3].textContent.split("/")[0];
             if (currentEnergy <= config.minAmount.energy) {
+                logger("---===Limit check Action Performing===---");
                 logger(`Current energy (${currentEnergy}) less than or equal to specified limit (${config.minAmount.energy})`);
                 const energyRestoreResult = yield handleEnergyRestore(currentEnergy);
-                logger("await energy restore?");
                 if (!energyRestoreResult) {
-                    const checker = checkIfOneMoreClickIsAvailable(currentTool, currentEnergy, "energy");
+                    const checker = checkIfOneMoreClickIsAvailable(currentItem, currentEnergy, "energy");
                     if (!checker) {
                         clicker.textContent = "Auto-Click deactivated(fail occurred)";
                         logger("You dont have enough energy to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
@@ -259,11 +229,12 @@
                 }
             }
             const currentDurability = +document.querySelector(".card-number").textContent.split("/")[0];
-            if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentTool.name)]) {
-                logger(`Current durability (${currentDurability}) less than or equal to specified limit (${config.minAmount.durability[sentenceToCamelCase(currentTool.name)]}), repairing...`);
+            if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentItem.name)]) {
+                logger("---===Limit check Action Performing===---");
+                logger(`Current durability (${currentDurability}) less than or equal to specified limit (${config.minAmount.durability[sentenceToCamelCase(currentItem.name)]}), repairing...`);
                 const toolRepairResult = yield handleToolRepair();
                 if (!toolRepairResult) {
-                    const checker = checkIfOneMoreClickIsAvailable(currentTool, currentDurability, "durability");
+                    const checker = checkIfOneMoreClickIsAvailable(currentItem, currentDurability, "durability");
                     if (!checker) {
                         clicker.textContent = "Auto-Click deactivated(fail occurred)";
                         logger("You dont have enough durability to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
@@ -271,118 +242,129 @@
                     }
                 }
             }
-            logger("Limit check action SUCCESSFUL");
             response = true;
             return response;
         });
     }
 
-    function labelInit() {
-        const container = document.querySelector(".game-container");
-        const divWrapper = document.createElement("div");
-        divWrapper.classList.add("label");
-        divWrapper.id = "auto-clicker";
-        divWrapper.style.top = "50px";
-        divWrapper.style.left = "50%";
-        divWrapper.style.transform = "translateX(-50%)";
-        divWrapper.style.border = "1px solid transparent";
-        divWrapper.style.borderRadius = "5px";
-        divWrapper.style.padding = "3px 8px";
-        divWrapper.style.backgroundColor = "#D1A79D";
-        divWrapper.style.position = "absolute";
-        divWrapper.style.color = "#fafafa";
-        divWrapper.style.fontSize = "15px";
-        divWrapper.style.display = "flex";
-        divWrapper.style.flexDirection = "column";
-        const divTitle = document.createElement("div");
-        divTitle.classList.add("label__title");
-        divTitle.innerText = `Auto-Clicker activated`;
-        const divContent = document.createElement("div");
-        divContent.classList.add("label__content");
-        container.appendChild(divWrapper);
-        divWrapper.appendChild(divTitle);
-        divWrapper.appendChild(divContent);
-    }
-    function labelTimer(string, ms) {
-        const end = Date.now() + ms;
-        const interval = setInterval(() => {
-            const content = document.querySelector(".label__content");
-            let start = Date.now();
-            let diff = end - start;
-            let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            content.innerHTML =
-                string +
-                    " " +
-                    `in ${hours > 0 ? hours + (hours > 1 ? " hours" : " hour") : ""} ${minutes > 0 ? minutes + (minutes > 1 ? " mins" : " min") : ""} ${seconds > 0 ? seconds + (seconds > 1 ? " seconds" : " second") : ""}`.trim();
-            if (diff < 0) {
-                clearInterval(interval);
-                content.innerHTML = string + " EXPIRED";
-            }
-        }, 1000);
-    }
-
-    function handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData) {
+    function handleItemsData(arrayOfToolNodes) {
         return __awaiter(this, void 0, void 0, function* () {
-            // 1) Check if 'Mine' button is available
-            const mineButton = document.querySelector(".button-section");
-            if (mineButton.textContent !== "Mine") {
-                const countDownString = document.querySelector(".card-container--time").textContent;
-                const countDown = handleCountDown(countDownString);
-                const visibleToolName = document.querySelector(".info-title-name").textContent;
-                console.log(toolData);
-                console.log(toolWithLowestCd.name, visibleToolName);
-                if (toolWithLowestCd.name !== visibleToolName) {
-                    logger("Names doesn't matches, searching for tool with lowest cd again...");
-                    return clickHandler(arrayOfToolNodes, toolData);
-                }
-                else {
-                    logger(`CD diff ${msToTime(toolData[1].countdown - toolData[0].countdown)}`);
-                    logger(`[${toolWithLowestCd.name}: id ${toolWithLowestCd.id}] Mine button not active yet, the click action will be performed in ${msToTime(countDown)}`);
-                    labelTimer(`Next click: ${toolWithLowestCd.name} [id ${toolWithLowestCd.id}]`, countDown);
-                    return setTimeout(() => {
-                        handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData);
-                    }, countDown);
-                }
+            const initialArray = [];
+            for (let index = 0; index < arrayOfToolNodes.length; index++) {
+                arrayOfToolNodes[index].click();
+                yield timer(3000);
+                const toolObj = makeItemObject(index);
+                initialArray.push(toolObj);
             }
-            // 2) Check resources
-            const checkedResult = yield checkLimitsHandler(toolWithLowestCd);
-            // 3) Click action
-            if (checkedResult) {
-                logger("---===Click Action Performing===---");
-                mineButton.click();
-                yield handleModalClose();
-                logger(`Mine button click on ${toolWithLowestCd.name}[id:${toolWithLowestCd.id}] is SUCCESSFUL`);
-                setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    const newToolData = yield getToolData(arrayOfToolNodes);
-                    clickHandler(arrayOfToolNodes, newToolData);
-                }), 10000);
-            }
+            return initialArray;
         });
     }
-    function clickHandler(arrayOfToolNodes, toolData) {
-        const toolWithLowestCd = findItemWithLowestCd(toolData);
-        arrayOfToolNodes[toolWithLowestCd.id].click();
-        setTimeout(() => handleClickOnMineButton(arrayOfToolNodes, toolWithLowestCd, toolData), 3000);
+    function makeItemObject(index) {
+        var _a, _b, _c;
+        const name = document.querySelector(".info-title-name").textContent;
+        const id = index;
+        const countDown = handleCountDown(document.querySelector(".card-container--time").textContent);
+        const isMember = name.toLowerCase().includes("member");
+        const minDurability = config.minAmount.durability[sentenceToCamelCase(name)];
+        const energyConsumed = +((_a = document.querySelectorAll(".info-description")[3]) === null || _a === void 0 ? void 0 : _a.textContent);
+        const durabilityConsumed = +((_b = document.querySelectorAll(".info-description")[4]) === null || _b === void 0 ? void 0 : _b.textContent);
+        const charges = +((_c = document.querySelector(".info-title-level")) === null || _c === void 0 ? void 0 : _c.textContent.split("/")[0]);
+        if (isMember) {
+            const resultMemberData = {
+                name,
+                type: "member",
+                countDown,
+                id,
+            };
+            return resultMemberData;
+        }
+        const resultToolData = {
+            name,
+            id,
+            type: "tool",
+            countDown,
+            minDurability,
+            energyConsumed,
+            durabilityConsumed,
+            charges,
+        };
+        return resultToolData;
+    }
+    function findItemWithLowestCd(arrayOfItems) {
+        const item = arrayOfItems.reduce((prev, cur) => {
+            return prev.countDown < cur.countDown ? prev : cur;
+        });
+        return item;
     }
 
-    function activateAutoClicker() {
+    function navigateToItem(arrayOfNodes, id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            arrayOfNodes[id].click();
+            yield timer(3000);
+        });
+    }
+
+    const handleClick = (arrayOfItemNodes, itemsData, currentItem) => __awaiter(void 0, void 0, void 0, function* () {
+        const mainButton = document.querySelector(".button-section");
+        if (mainButton.textContent.toLocaleLowerCase() === "countdown") {
+            return handleDisabledButton(arrayOfItemNodes, itemsData, currentItem);
+        }
+        const clickIsPossible = yield checkLimitsHandler(currentItem);
+        if (clickIsPossible) {
+            handleActiveButton(arrayOfItemNodes, currentItem, mainButton);
+        }
+    });
+    const handleActiveButton = (arrayOfItemNodes, currentItem, button) => __awaiter(void 0, void 0, void 0, function* () {
+        logger("---===Click Action Performing===---");
+        button.click();
+        const isModalClosed = yield handleModalClose();
+        if (isModalClosed) {
+            if (button.textContent.toLowerCase() === "countdown") {
+                logger(`Mine button click on ${currentItem.name}[id:${currentItem.id}] is SUCCESSFUL`);
+                return setTimeout(() => __awaiter(void 0, void 0, void 0, function* () {
+                    const newItemsData = yield handleItemsData(arrayOfItemNodes);
+                    if (newItemsData) {
+                        proceedToLowestCDAndClick(arrayOfItemNodes, newItemsData);
+                    }
+                }), 4000);
+            }
+            logger("Button still active, retry click");
+            handleActiveButton(arrayOfItemNodes, currentItem, button);
+        }
+    });
+    const handleDisabledButton = (arrayOfItemNodes, itemsData, currentItem) => {
+        const countDownString = document.querySelector(".card-container--time").textContent;
+        const countDown = handleCountDown(countDownString);
+        const visibleItemName = document.querySelector(".info-title-name").textContent;
+        if (visibleItemName !== currentItem.name) {
+            proceedToLowestCDAndClick(arrayOfItemNodes, itemsData);
+        }
+        logger(`[${currentItem.name}: id ${currentItem.id}] Mine button not active yet, the click action will be performed in ${msToTime(countDown)}`);
+        return setTimeout(() => {
+            handleClick(arrayOfItemNodes, itemsData, currentItem);
+        }, countDown);
+    };
+    const proceedToLowestCDAndClick = (arrayOfItemNodes, itemsData) => __awaiter(void 0, void 0, void 0, function* () {
+        const item = findItemWithLowestCd(itemsData);
+        yield navigateToItem(arrayOfItemNodes, item.id);
+        handleClick(arrayOfItemNodes, itemsData, item);
+    });
+
+    function init() {
         return __awaiter(this, void 0, void 0, function* () {
             const isGameLoaded = yield waitForElement(".button-section");
             if (!isGameLoaded) {
                 return logger("Error with login occurred");
             }
             logger("Auto-Click script is running...");
-            labelInit();
-            const arrayOfToolNodes = document.querySelector("section.vertical-carousel-container").children;
-            const initialToolsData = yield getToolData(arrayOfToolNodes);
-            if (initialToolsData) {
-                logger("Initial Tool data is complete");
-                clickHandler(arrayOfToolNodes, initialToolsData);
+            const arrayOfItemNodes = document.querySelector("section.vertical-carousel-container").children;
+            const initialItemsData = yield handleItemsData(arrayOfItemNodes);
+            if (initialItemsData) {
+                console.log(initialItemsData);
+                proceedToLowestCDAndClick(arrayOfItemNodes, initialItemsData);
             }
         });
     }
-    activateAutoClicker();
+    init();
 
 })();

@@ -1,10 +1,10 @@
 {
   "name": "farmersworld",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.ts",
   "scripts": {
-    "build": "gorilla --input ./src/main.ts --output ./dist/farmersworld.user.js"
+    "build": "gorilla --input ./src/main.ts --output ./dist/farmersworld.userscript.js"
   },
   "gorilla": {
     "match": "https://play.farmersworld.io/",

@@ -1,6 +1,6 @@
-import { config } from "./../config";
+import { config } from "../config";
+import { timer } from "../utility/timers";
 import { logger, sentenceToCamelCase, waitForElement } from "../utility/utility";
-import { timer } from "../utility/timerHandlers";
 
 async function handleToolRepair() {
   const durabilityContent = document.querySelector(".content");
@@ -33,7 +33,9 @@ async function handleEnergyRestore(currentEnergy: number) {
   let response;
 
   if (currentFood < 1) {
-    logger(`You need at least 1 whole piece of food to perform energy restoration action\/n Energy restore action is FAILED`);
+    logger(
+      `You need at least 1 whole piece of food to perform energy restoration action\/n Energy restore action is FAILED`
+    );
     response = false;
     return response;
   }
@@ -57,7 +59,9 @@ async function handleEnergyRestore(currentEnergy: number) {
       for (let i = 0; i < Math.floor(currentFood); i++) {
         plusEnergyButton.click();
       }
-      result = `Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(currentFood)}`;
+      result = `Total energy restored: ${pointsPerFood * Math.floor(currentFood)}, food spent: ${Math.floor(
+        currentFood
+      )}`;
     }
     const exchangeButton = await waitForElement(".plain-button.long:not(.disabled)");
     exchangeButton.click();
@@ -73,18 +77,18 @@ async function handleEnergyRestore(currentEnergy: number) {
   }
 }
 
-function checkIfOneMoreClickIsAvailable(currentTool: ToolType, currentValue: number, action: string) {
+function checkIfOneMoreClickIsAvailable(currentItem: ToolInterface, currentValue: number, action: string) {
   let response;
   switch (action) {
     case "durability":
-      if (currentValue > currentTool.durabilityConsumed) {
+      if (currentValue > currentItem.durabilityConsumed) {
         response = true;
       } else {
         response = false;
       }
       break;
     case "energy":
-      if (currentValue > currentTool.energyConsumed) {
+      if (currentValue > currentItem.energyConsumed) {
         response = true;
       } else {
         response = false;
@@ -96,40 +100,46 @@ function checkIfOneMoreClickIsAvailable(currentTool: ToolType, currentValue: num
   return response;
 }
 
-export default async function checkLimitsHandler(currentTool: ToolType) {
+export default async function checkLimitsHandler(currentItem: ToolInterface | MemberInterface) {
   const clicker = document.getElementById("#auto-clicker");
   let response;
-
+  if (currentItem.type !== "tool") {
+    response = true;
+    return response;
+  }
   const currentEnergy = +document.querySelectorAll(".resource-number")[3].textContent.split("/")[0];
   if (currentEnergy <= config.minAmount.energy) {
     logger("---===Limit check Action Performing===---");
     logger(`Current energy (${currentEnergy}) less than or equal to specified limit (${config.minAmount.energy})`);
     const energyRestoreResult = await handleEnergyRestore(currentEnergy);
-    logger("await energy restore?");
     if (!energyRestoreResult) {
-      const checker = checkIfOneMoreClickIsAvailable(currentTool, currentEnergy, "energy");
+      const checker = checkIfOneMoreClickIsAvailable(currentItem, currentEnergy, "energy");
       if (!checker) {
         clicker.textContent = "Auto-Click deactivated(fail occurred)";
-        logger("You dont have enough energy to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
+        logger(
+          "You dont have enough energy to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down..."
+        );
         response = false;
       }
     }
   }
 
   const currentDurability = +document.querySelector(".card-number").textContent.split("/")[0];
-  if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentTool.name)]) {
+  if (currentDurability <= config.minAmount.durability[sentenceToCamelCase(currentItem.name)]) {
     logger("---===Limit check Action Performing===---");
     logger(
       `Current durability (${currentDurability}) less than or equal to specified limit (${
-        config.minAmount.durability[sentenceToCamelCase(currentTool.name)]
+        config.minAmount.durability[sentenceToCamelCase(currentItem.name)]
       }), repairing...`
     );
     const toolRepairResult = await handleToolRepair();
     if (!toolRepairResult) {
-      const checker = checkIfOneMoreClickIsAvailable(currentTool, currentDurability, "durability");
+      const checker = checkIfOneMoreClickIsAvailable(currentItem, currentDurability, "durability");
       if (!checker) {
         clicker.textContent = "Auto-Click deactivated(fail occurred)";
-        logger("You dont have enough durability to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down...");
+        logger(
+          "You dont have enough durability to perform click action, supply your stocks and refresh page./n Auto-Click script shutting down..."
+        );
         response = false;
       }
     }
