@@ -1,7 +1,7 @@
 
 // ==UserScript==
 // @name			farmersworld
-// @version			1.1.1
+// @version			1.2.0
 // @author			splash07
 // @grant			none
 // @match			https://play.farmersworld.io/
@@ -82,7 +82,7 @@
             while (document.querySelector(selector) === null) {
                 yield new Promise((resolve) => requestAnimationFrame(resolve));
             }
-            yield new Promise((resolve) => setTimeout(resolve, 1000));
+            yield new Promise((resolve) => setTimeout(resolve, 5000));
             return document.querySelector(selector);
         });
     }
@@ -90,10 +90,9 @@
         return __awaiter(this, void 0, void 0, function* () {
             const modal = yield waitForElement(".modal");
             if (modal) {
-                logger("Modal appeared");
                 const wrapper = document.querySelector(".wapper");
                 wrapper.click();
-                yield timer(10000);
+                yield timer(1000);
                 logger("Modal is closed");
                 return true;
             }

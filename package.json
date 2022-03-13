@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "build": "gorilla --input ./src/main.ts --output ./dist/farmersworld.userscript.js"
+    "build": "gorilla --input ./src/main.ts --output ./dist/farmersworld.user.js"
   },
   "gorilla": {
     "match": "https://play.farmersworld.io/",
